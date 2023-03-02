@@ -20,6 +20,8 @@ const (
 	TextDavinci001Engine = "text-davinci-001"
 	TextDavinci002Engine = "text-davinci-002"
 	TextDavinci003Engine = "text-davinci-003"
+	Gpt35TurboEngine     = "gpt-3.5-turbo"
+	Gpt35Turbo0301Engine = "gpt-3.5-turbo-0301"
 	AdaEngine            = "ada"
 	BabbageEngine        = "babbage"
 	CurieEngine          = "curie"
@@ -59,6 +61,11 @@ func getEngineURL(engine string) string {
 	return fmt.Sprintf("%s/engines/%s/completions", defaultBaseURL, engine)
 }
 
+type CompletionResponseInterface interface {
+	CanContinue() bool
+	Text() string
+}
+
 // A Client is an API client to communicate with the OpenAI gpt-3 APIs
 type Client interface {
 	// Engines lists the currently available engines, and provides basic information about each
@@ -75,13 +82,17 @@ type Client interface {
 
 	// CompletionStream creates a completion with the default engine and streams the results through
 	// multiple calls to onData.
-	CompletionStream(ctx context.Context, request CompletionRequest, onData func(*CompletionResponse)) error
+	CompletionStream(ctx context.Context, request CompletionRequest, onData func(CompletionResponseInterface)) error
 
 	// CompletionWithEngine is the same as Completion except allows overriding the default engine on the client
 	CompletionWithEngine(ctx context.Context, engine string, request CompletionRequest) (*CompletionResponse, error)
 
 	// CompletionStreamWithEngine is the same as CompletionStream except allows overriding the default engine on the client
-	CompletionStreamWithEngine(ctx context.Context, engine string, request CompletionRequest, onData func(*CompletionResponse)) error
+	CompletionStreamWithEngine(ctx context.Context, engine string, request CompletionRequest, onData func(CompletionResponseInterface)) error
+
+	// CompletionStream creates a completion with the default engine and streams the results through
+	// multiple calls to onData.
+	ChatCompletionStream(ctx context.Context, request ChatCompletionRequest, onData func(CompletionResponseInterface)) error
 
 	// Given a prompt and an instruction, the model will return an edited version of the prompt.
 	Edits(ctx context.Context, request EditsRequest) (*EditsResponse, error)
@@ -181,7 +192,7 @@ func (c *client) CompletionWithEngine(ctx context.Context, engine string, reques
 	return output, nil
 }
 
-func (c *client) CompletionStream(ctx context.Context, request CompletionRequest, onData func(*CompletionResponse)) error {
+func (c *client) CompletionStream(ctx context.Context, request CompletionRequest, onData func(CompletionResponseInterface)) error {
 	return c.CompletionStreamWithEngine(ctx, c.defaultEngine, request, onData)
 }
 
@@ -192,13 +203,17 @@ func (c *client) CompletionStreamWithEngine(
 	ctx context.Context,
 	engine string,
 	request CompletionRequest,
-	onData func(*CompletionResponse),
+	onData func(CompletionResponseInterface),
 ) error {
 	request.Stream = true
 	req, err := c.newRequest(ctx, "POST", fmt.Sprintf("/engines/%s/completions", engine), request)
 	if err != nil {
 		return err
 	}
+	return c.sendAndOnData(req, onData)
+}
+
+func (c *client) sendAndOnData(req *http.Request, onData func(CompletionResponseInterface)) error {
 	resp, err := c.performRequest(req)
 	if err != nil {
 		return err

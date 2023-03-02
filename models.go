@@ -120,6 +120,14 @@ type CompletionResponse struct {
 	Usage   CompletionResponseUsage    `json:"usage"`
 }
 
+func (cr *CompletionResponse) CanContinue() bool {
+	return cr.Choices[0].FinishReason == "lenght"
+}
+
+func (cr *CompletionResponse) Text() string {
+	return cr.Choices[0].Text
+}
+
 // CompletionResponseUsage is the object that returns how many tokens the completion's request used
 type CompletionResponseUsage struct {
 	PromptTokens     int `json:"prompt_tokens"`
