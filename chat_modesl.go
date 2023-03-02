@@ -76,7 +76,7 @@ type ChatCompletionResponseUsage struct {
 	TotalTokens      int `json:"total_tokens"`
 }
 
-func (c *client) ChatCompletion(ctx context.Context, engine string, request CompletionRequest) (*ChatCompletionResponse, error) {
+func (c *client) ChatCompletion(ctx context.Context, request ChatCompletionRequest) (*ChatCompletionResponse, error) {
 	request.Stream = false
 	req, err := c.newRequest(ctx, "POST", "/chat/completions", request)
 	if err != nil {

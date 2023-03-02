@@ -90,7 +90,7 @@ type Client interface {
 	// CompletionStreamWithEngine is the same as CompletionStream except allows overriding the default engine on the client
 	CompletionStreamWithEngine(ctx context.Context, engine string, request CompletionRequest, onData func(CompletionResponseInterface)) error
 
-	ChatCompletion(ctx context.Context, engine string, request CompletionRequest) (*ChatCompletionResponse, error)
+	ChatCompletion(ctx context.Context, request ChatCompletionRequest) (*ChatCompletionResponse, error)
 
 	// CompletionStream creates a completion with the default engine and streams the results through
 	// multiple calls to onData.
