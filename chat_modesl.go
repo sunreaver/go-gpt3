@@ -21,10 +21,6 @@ type ChatCompletionRequest struct {
 	TopP *float32 `json:"top_p,omitempty"`
 	// How many chat completion choices to generate for each input message.
 	N *int `json:"n"`
-	// Include the probabilities of most likely tokens
-	LogProbs *int `json:"logprobs"`
-	// Echo back the prompt in addition to the completion
-	Echo bool `json:"echo"`
 	// Up to 4 sequences where the API will stop generating tokens. Response will not contain the stop sequence.
 	Stop []string `json:"stop,omitempty"`
 	// Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
