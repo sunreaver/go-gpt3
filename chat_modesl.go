@@ -57,7 +57,6 @@ type ChatCompletionResponse struct {
 	ID      string                         `json:"id"`
 	Object  string                         `json:"object"`
 	Created int                            `json:"created"`
-	Model   string                         `json:"model"`
 	Choices []ChatCompletionResponseChoice `json:"choices"`
 	Usage   ChatCompletionResponseUsage    `json:"usage"`
 }
@@ -75,6 +74,24 @@ type ChatCompletionResponseUsage struct {
 	PromptTokens     int `json:"prompt_tokens"`
 	CompletionTokens int `json:"completion_tokens"`
 	TotalTokens      int `json:"total_tokens"`
+}
+
+func (c *client) ChatCompletion(ctx context.Context, engine string, request CompletionRequest) (*ChatCompletionResponse, error) {
+	request.Stream = false
+	req, err := c.newRequest(ctx, "POST", "/chat/completions", request)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.performRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
+	output := new(ChatCompletionResponse)
+	if err := getResponseObject(resp, output); err != nil {
+		return nil, err
+	}
+	return output, nil
 }
 
 func (c *client) ChatCompletionStream(ctx context.Context, request ChatCompletionRequest, onData func(CompletionResponseInterface)) error {
