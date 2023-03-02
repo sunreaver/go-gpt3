@@ -121,11 +121,17 @@ type CompletionResponse struct {
 }
 
 func (cr *CompletionResponse) CanContinue() bool {
-	return cr.Choices[0].FinishReason == "length"
+	if cr != nil && len(cr.Choices) > 0 {
+		return cr.Choices[0].FinishReason == "length"
+	}
+	return false
 }
 
 func (cr *CompletionResponse) Text() string {
-	return cr.Choices[0].Text
+	if cr != nil && len(cr.Choices) > 0 {
+		return cr.Choices[0].Text
+	}
+	return ""
 }
 
 // CompletionResponseUsage is the object that returns how many tokens the completion's request used

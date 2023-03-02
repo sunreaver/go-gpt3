@@ -37,32 +37,55 @@ type ChatCompletionRequest struct {
 }
 
 type ChatCompletionResponseChoiceMessage struct {
-	Role    string `json:"role"`
+	// Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
 // CompletionResponseChoice is one of the choices returned in the response to the Completions API
 type ChatCompletionResponseChoice struct {
 	Index        int                                 `json:"index"`
-	Message      ChatCompletionResponseChoiceMessage `json:"message"`
+	Message      ChatCompletionResponseChoiceMessage `json:"delta"`
 	FinishReason string                              `json:"finish_reason"`
 }
+
+/*
+{
+	"id": "chatcmpl-6pTTLGwAbhbdi2SfN8yUdAnQLgSyT",
+	"object": "chat.completion.chunk",
+	"created": 1677726039,
+	"model": "gpt-3.5-turbo-0301",
+	"choices": [{
+		"delta": {
+			"content": "块"
+		},
+		"index": 0,
+		"finish_reason": null
+	}]
+}
+*/
 
 // CompletionResponse is the full response from a request to the completions API
 type ChatCompletionResponse struct {
 	ID      string                         `json:"id"`
 	Object  string                         `json:"object"`
 	Created int                            `json:"created"`
+	Model   string                         `json:"model"`
 	Choices []ChatCompletionResponseChoice `json:"choices"`
-	Usage   ChatCompletionResponseUsage    `json:"usage"`
+	// Usage   ChatCompletionResponseUsage    `json:"usage"`
 }
 
 func (cr *ChatCompletionResponse) CanContinue() bool {
-	return cr.Choices[0].FinishReason == "length"
+	if cr != nil && len(cr.Choices) > 0 {
+		return cr.Choices[0].FinishReason == "length"
+	}
+	return false
 }
 
 func (cr *ChatCompletionResponse) Text() string {
-	return cr.Choices[0].Message.Content
+	if cr != nil && len(cr.Choices) > 0 {
+		return cr.Choices[0].Message.Content
+	}
+	return ""
 }
 
 // CompletionResponseUsage is the object that returns how many tokens the completion's request used
