@@ -104,5 +104,5 @@ func (c *client) ChatCompletionStreamWithEngine(
 	if err != nil {
 		return err
 	}
-	return c.sendAndOnData(req, onData)
+	return c.sendAndOnData(req, new(ChatCompletionResponse), onData)
 }

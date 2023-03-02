@@ -212,10 +212,10 @@ func (c *client) CompletionStreamWithEngine(
 	if err != nil {
 		return err
 	}
-	return c.sendAndOnData(req, onData)
+	return c.sendAndOnData(req, new(CompletionResponse), onData)
 }
 
-func (c *client) sendAndOnData(req *http.Request, onData func(CompletionResponseInterface)) error {
+func (c *client) sendAndOnData(req *http.Request, output CompletionResponseInterface, onData func(CompletionResponseInterface)) error {
 	resp, err := c.performRequest(req)
 	if err != nil {
 		return err
@@ -241,7 +241,6 @@ func (c *client) sendAndOnData(req *http.Request, onData func(CompletionResponse
 		if bytes.HasPrefix(line, doneSequence) {
 			break
 		}
-		output := new(CompletionResponse)
 		if err := json.Unmarshal(line, output); err != nil {
 			return fmt.Errorf("invalid json stream data: %v", err)
 		}
