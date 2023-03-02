@@ -62,7 +62,7 @@ type ChatCompletionResponse struct {
 }
 
 func (cr *ChatCompletionResponse) CanContinue() bool {
-	return cr.Choices[0].FinishReason == "lenght"
+	return cr.Choices[0].FinishReason == "length"
 }
 
 func (cr *ChatCompletionResponse) Text() string {

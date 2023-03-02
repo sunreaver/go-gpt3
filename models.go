@@ -121,7 +121,7 @@ type CompletionResponse struct {
 }
 
 func (cr *CompletionResponse) CanContinue() bool {
-	return cr.Choices[0].FinishReason == "lenght"
+	return cr.Choices[0].FinishReason == "length"
 }
 
 func (cr *CompletionResponse) Text() string {
