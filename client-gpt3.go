@@ -32,8 +32,22 @@ func (c *GPT3client) DoStream(ctx context.Context, say []ChatCompletionMessage, 
 		}
 		return c.client.ChatCompletionStream(ctx, request, fn)
 	}
+	// 组装 内容
+	text := make([]string, len(say))
+	for idx, v := range say {
+		text[idx] = v.Content
+	}
+	// text := strings.Builder{}
+	// for _, v := range say {
+	// 	text.WriteString(v.Content)
+	// }
+	// tstr := text.String()
+	// // max 4096 限制
+	// if l := len(tstr); l > 4096 {
+	// 	tstr = string([]rune(tstr[l-4096:])[2:])
+	// }
 	request := CompletionRequest{
-		Prompt:    []string{say[0].Content},
+		Prompt:    text,
 		MaxTokens: IntPtr(c.maxtokens),
 	}
 	return c.client.CompletionStream(ctx, request, fn)
