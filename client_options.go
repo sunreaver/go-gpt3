@@ -16,14 +16,6 @@ func WithOrg(id string) ClientOption {
 	}
 }
 
-// WithDefaultBaseURL https://api.openai.com
-func WithDefaultBaseURL(uri string) ClientOption {
-	return func(c *client) error {
-		c.baseURL = uri
-		return nil
-	}
-}
-
 // WithDefaultEngine is a client option that allows you to override the default engine of the client
 func WithDefaultEngine(engine EngineType) ClientOption {
 	return func(c *client) error {
@@ -44,6 +36,9 @@ func WithUserAgent(userAgent string) ClientOption {
 // The default base url is "https://api.openai.com/v1"
 func WithBaseURL(baseURL string) ClientOption {
 	return func(c *client) error {
+		if baseURL == "" {
+			return nil
+		}
 		c.baseURL = baseURL
 		return nil
 	}
