@@ -19,20 +19,21 @@ func MakeGPT3Client(apikey string, maxtokens int, options ...ClientOption) *GPT3
 	}
 }
 
-func (c *GPT3client) DoStream(ctx context.Context, say string, fn func(cr CompletionResponseInterface)) error {
+func (c *GPT3client) DoStream(ctx context.Context, say []ChatCompletionMessage, fn func(cr CompletionResponseInterface)) error {
+	if len(say) == 0 {
+		return errors.New("您得说些什么。")
+	}
 	if c.client.DefaultEngine() == Gpt35TurboEngine ||
 		c.client.DefaultEngine() == Gpt35Turbo0301Engine {
 		request := ChatCompletionRequest{
-			Model: c.client.DefaultEngine(),
-			Messages: []ChatCompletionMessage{
-				{Role: "user", Content: say},
-			},
+			Model:     c.client.DefaultEngine(),
+			Messages:  say,
 			MaxTokens: IntPtr(c.maxtokens),
 		}
 		return c.client.ChatCompletionStream(ctx, request, fn)
 	}
 	request := CompletionRequest{
-		Prompt:    []string{say},
+		Prompt:    []string{say[0].Content},
 		MaxTokens: IntPtr(c.maxtokens),
 	}
 	return c.client.CompletionStream(ctx, request, fn)
