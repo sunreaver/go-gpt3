@@ -107,6 +107,8 @@ type Client interface {
 
 	// Returns an embedding using the provided request.
 	Embeddings(ctx context.Context, request EmbeddingsRequest) (*EmbeddingsResponse, error)
+
+	DefaultEngine() string
 }
 
 type client struct {
@@ -136,6 +138,10 @@ func NewClient(apiKey string, options ...ClientOption) Client {
 		o(c)
 	}
 	return c
+}
+
+func (c *client) DefaultEngine() string {
+	return c.defaultEngine
 }
 
 func (c *client) Engines(ctx context.Context) (*EnginesResponse, error) {
