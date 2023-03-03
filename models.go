@@ -134,6 +134,10 @@ func (cr *CompletionResponse) Text() string {
 	return ""
 }
 
+func (cr *CompletionResponse) Role() string {
+	return "user"
+}
+
 // CompletionResponseUsage is the object that returns how many tokens the completion's request used
 type CompletionResponseUsage struct {
 	PromptTokens     int `json:"prompt_tokens"`

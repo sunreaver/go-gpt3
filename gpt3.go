@@ -12,21 +12,23 @@ import (
 	"time"
 )
 
+type EngineType string
+
 // Engine Types
 const (
-	TextAda001Engine     = "text-ada-001"
-	TextBabbage001Engine = "text-babbage-001"
-	TextCurie001Engine   = "text-curie-001"
-	TextDavinci001Engine = "text-davinci-001"
-	TextDavinci002Engine = "text-davinci-002"
-	TextDavinci003Engine = "text-davinci-003"
-	Gpt35TurboEngine     = "gpt-3.5-turbo"
-	Gpt35Turbo0301Engine = "gpt-3.5-turbo-0301"
-	AdaEngine            = "ada"
-	BabbageEngine        = "babbage"
-	CurieEngine          = "curie"
-	DavinciEngine        = "davinci"
-	DefaultEngine        = DavinciEngine
+	TextAda001Engine     EngineType = "text-ada-001"
+	TextBabbage001Engine EngineType = "text-babbage-001"
+	TextCurie001Engine   EngineType = "text-curie-001"
+	TextDavinci001Engine EngineType = "text-davinci-001"
+	TextDavinci002Engine EngineType = "text-davinci-002"
+	TextDavinci003Engine EngineType = "text-davinci-003"
+	Gpt35TurboEngine     EngineType = "gpt-3.5-turbo"
+	Gpt35Turbo0301Engine EngineType = "gpt-3.5-turbo-0301"
+	AdaEngine            EngineType = "ada"
+	BabbageEngine        EngineType = "babbage"
+	CurieEngine          EngineType = "curie"
+	DavinciEngine        EngineType = "davinci"
+	DefaultEngine        EngineType = DavinciEngine
 )
 
 type EmbeddingEngine string
@@ -64,6 +66,7 @@ func getEngineURL(engine string) string {
 type CompletionResponseInterface interface {
 	CanContinue() bool
 	Text() string
+	Role() string
 }
 
 // A Client is an API client to communicate with the OpenAI gpt-3 APIs
@@ -74,7 +77,7 @@ type Client interface {
 
 	// Engine retrieves an engine instance, providing basic information about the engine such
 	// as the owner and availability.
-	Engine(ctx context.Context, engine string) (*EngineObject, error)
+	Engine(ctx context.Context, engine EngineType) (*EngineObject, error)
 
 	// Completion creates a completion with the default engine. This is the main endpoint of the API
 	// which auto-completes based on the given prompt.
@@ -85,10 +88,10 @@ type Client interface {
 	CompletionStream(ctx context.Context, request CompletionRequest, onData func(CompletionResponseInterface)) error
 
 	// CompletionWithEngine is the same as Completion except allows overriding the default engine on the client
-	CompletionWithEngine(ctx context.Context, engine string, request CompletionRequest) (*CompletionResponse, error)
+	CompletionWithEngine(ctx context.Context, engine EngineType, request CompletionRequest) (*CompletionResponse, error)
 
 	// CompletionStreamWithEngine is the same as CompletionStream except allows overriding the default engine on the client
-	CompletionStreamWithEngine(ctx context.Context, engine string, request CompletionRequest, onData func(CompletionResponseInterface)) error
+	CompletionStreamWithEngine(ctx context.Context, engine EngineType, request CompletionRequest, onData func(CompletionResponseInterface)) error
 
 	ChatCompletion(ctx context.Context, request ChatCompletionRequest) (*ChatCompletionResponse, error)
 
@@ -103,12 +106,12 @@ type Client interface {
 	Search(ctx context.Context, request SearchRequest) (*SearchResponse, error)
 
 	// SearchWithEngine performs a semantic search over a list of documents with the specified engine.
-	SearchWithEngine(ctx context.Context, engine string, request SearchRequest) (*SearchResponse, error)
+	SearchWithEngine(ctx context.Context, engine EngineType, request SearchRequest) (*SearchResponse, error)
 
 	// Returns an embedding using the provided request.
 	Embeddings(ctx context.Context, request EmbeddingsRequest) (*EmbeddingsResponse, error)
 
-	DefaultEngine() string
+	DefaultEngine() EngineType
 }
 
 type client struct {
@@ -116,7 +119,7 @@ type client struct {
 	apiKey        string
 	userAgent     string
 	httpClient    *http.Client
-	defaultEngine string
+	defaultEngine EngineType
 	idOrg         string
 }
 
@@ -140,7 +143,7 @@ func NewClient(apiKey string, options ...ClientOption) Client {
 	return c
 }
 
-func (c *client) DefaultEngine() string {
+func (c *client) DefaultEngine() EngineType {
 	return c.defaultEngine
 }
 
@@ -161,7 +164,7 @@ func (c *client) Engines(ctx context.Context) (*EnginesResponse, error) {
 	return output, nil
 }
 
-func (c *client) Engine(ctx context.Context, engine string) (*EngineObject, error) {
+func (c *client) Engine(ctx context.Context, engine EngineType) (*EngineObject, error) {
 	req, err := c.newRequest(ctx, "GET", fmt.Sprintf("/engines/%s", engine), nil)
 	if err != nil {
 		return nil, err
@@ -182,7 +185,7 @@ func (c *client) Completion(ctx context.Context, request CompletionRequest) (*Co
 	return c.CompletionWithEngine(ctx, c.defaultEngine, request)
 }
 
-func (c *client) CompletionWithEngine(ctx context.Context, engine string, request CompletionRequest) (*CompletionResponse, error) {
+func (c *client) CompletionWithEngine(ctx context.Context, engine EngineType, request CompletionRequest) (*CompletionResponse, error) {
 	request.Stream = false
 	req, err := c.newRequest(ctx, "POST", fmt.Sprintf("/engines/%s/completions", engine), request)
 	if err != nil {
@@ -204,12 +207,14 @@ func (c *client) CompletionStream(ctx context.Context, request CompletionRequest
 	return c.CompletionStreamWithEngine(ctx, c.defaultEngine, request, onData)
 }
 
-var dataPrefix = []byte("data: ")
-var doneSequence = []byte("[DONE]")
+var (
+	dataPrefix   = []byte("data: ")
+	doneSequence = []byte("[DONE]")
+)
 
 func (c *client) CompletionStreamWithEngine(
 	ctx context.Context,
-	engine string,
+	engine EngineType,
 	request CompletionRequest,
 	onData func(CompletionResponseInterface),
 ) error {
@@ -277,7 +282,7 @@ func (c *client) Search(ctx context.Context, request SearchRequest) (*SearchResp
 	return c.SearchWithEngine(ctx, c.defaultEngine, request)
 }
 
-func (c *client) SearchWithEngine(ctx context.Context, engine string, request SearchRequest) (*SearchResponse, error) {
+func (c *client) SearchWithEngine(ctx context.Context, engine EngineType, request SearchRequest) (*SearchResponse, error) {
 	req, err := c.newRequest(ctx, "POST", fmt.Sprintf("/engines/%s/search", engine), request)
 	if err != nil {
 		return nil, err

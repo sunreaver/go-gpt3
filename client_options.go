@@ -25,7 +25,7 @@ func WithDefaultBaseURL(uri string) ClientOption {
 }
 
 // WithDefaultEngine is a client option that allows you to override the default engine of the client
-func WithDefaultEngine(engine string) ClientOption {
+func WithDefaultEngine(engine EngineType) ClientOption {
 	return func(c *client) error {
 		c.defaultEngine = engine
 		return nil

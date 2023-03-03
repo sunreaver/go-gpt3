@@ -11,7 +11,7 @@ type ChatCompletionMessage struct {
 
 // ChatCompletionRequest is a request for the chat/completions API
 type ChatCompletionRequest struct {
-	Model    string                  `json:"model"`
+	Model    EngineType              `json:"model"`
 	Messages []ChatCompletionMessage `json:"messages"`
 	// The maximum number of tokens allowed for the generated answer. By default, the number of tokens the model can return will be (4096 - prompt tokens).
 	MaxTokens *int `json:"max_tokens,omitempty"`
@@ -37,13 +37,13 @@ type ChatCompletionRequest struct {
 }
 
 type ChatCompletionResponseChoiceMessage struct {
-	// Role    string `json:"role"`
+	Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
 // CompletionResponseChoice is one of the choices returned in the response to the Completions API
 type ChatCompletionResponseChoice struct {
-	Index        int                                 `json:"index"`
+	// Index        int                                 `json:"index"`
 	Message      ChatCompletionResponseChoiceMessage `json:"delta"`
 	FinishReason string                              `json:"finish_reason"`
 }
@@ -84,6 +84,13 @@ func (cr *ChatCompletionResponse) CanContinue() bool {
 func (cr *ChatCompletionResponse) Text() string {
 	if cr != nil && len(cr.Choices) > 0 {
 		return cr.Choices[0].Message.Content
+	}
+	return ""
+}
+
+func (cr *ChatCompletionResponse) Role() string {
+	if cr != nil && len(cr.Choices) > 0 {
+		return cr.Choices[0].Message.Role
 	}
 	return ""
 }
