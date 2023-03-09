@@ -72,3 +72,14 @@ func (c *GPT3client) DoOnce(ctx context.Context, say []ChatCompletionMessage) (C
 	}
 	return c.client.Completion(ctx, request)
 }
+
+func (c *GPT3client) CreateImage(ctx context.Context, say CreateImageReq) (*CreateImageResp, error) {
+	if len(say.Prompt) == 0 {
+		return nil, errors.New("您得说些什么。")
+	} else if say.N > 10 {
+		return nil, errors.New("不要太贪心，先试试取一幅图~")
+	} else if say.N <= 0 {
+		say.N = 1
+	}
+	return c.client.CreateImage(ctx, say)
+}

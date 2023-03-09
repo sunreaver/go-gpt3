@@ -24,6 +24,7 @@ const (
 	TextDavinci003Engine EngineType = "text-davinci-003"
 	Gpt35TurboEngine     EngineType = "gpt-3.5-turbo"
 	Gpt35Turbo0301Engine EngineType = "gpt-3.5-turbo-0301"
+	ImageEngineCreate    EngineType = "images/generations"
 	AdaEngine            EngineType = "ada"
 	BabbageEngine        EngineType = "babbage"
 	CurieEngine          EngineType = "curie"
@@ -73,11 +74,11 @@ type CompletionResponseInterface interface {
 type Client interface {
 	// Engines lists the currently available engines, and provides basic information about each
 	// option such as the owner and availability.
-	Engines(ctx context.Context) (*EnginesResponse, error)
+	// Engines(ctx context.Context) (*EnginesResponse, error)
 
 	// Engine retrieves an engine instance, providing basic information about the engine such
 	// as the owner and availability.
-	Engine(ctx context.Context, engine EngineType) (*EngineObject, error)
+	// Engine(ctx context.Context, engine EngineType) (*EngineObject, error)
 
 	// Completion creates a completion with the default engine. This is the main endpoint of the API
 	// which auto-completes based on the given prompt.
@@ -88,10 +89,10 @@ type Client interface {
 	CompletionStream(ctx context.Context, request CompletionRequest, onData func(CompletionResponseInterface)) error
 
 	// CompletionWithEngine is the same as Completion except allows overriding the default engine on the client
-	CompletionWithEngine(ctx context.Context, engine EngineType, request CompletionRequest) (*CompletionResponse, error)
+	// CompletionWithEngine(ctx context.Context, engine EngineType, request CompletionRequest) (*CompletionResponse, error)
 
 	// CompletionStreamWithEngine is the same as CompletionStream except allows overriding the default engine on the client
-	CompletionStreamWithEngine(ctx context.Context, engine EngineType, request CompletionRequest, onData func(CompletionResponseInterface)) error
+	// CompletionStreamWithEngine(ctx context.Context, engine EngineType, request CompletionRequest, onData func(CompletionResponseInterface)) error
 
 	ChatCompletion(ctx context.Context, request ChatCompletionRequest) (*ChatCompletionResponse, error)
 
@@ -100,17 +101,18 @@ type Client interface {
 	ChatCompletionStream(ctx context.Context, request ChatCompletionRequest, onData func(CompletionResponseInterface)) error
 
 	// Given a prompt and an instruction, the model will return an edited version of the prompt.
-	Edits(ctx context.Context, request EditsRequest) (*EditsResponse, error)
+	// Edits(ctx context.Context, request EditsRequest) (*EditsResponse, error)
 
 	// Search performs a semantic search over a list of documents with the default engine.
-	Search(ctx context.Context, request SearchRequest) (*SearchResponse, error)
+	// Search(ctx context.Context, request SearchRequest) (*SearchResponse, error)
 
 	// SearchWithEngine performs a semantic search over a list of documents with the specified engine.
-	SearchWithEngine(ctx context.Context, engine EngineType, request SearchRequest) (*SearchResponse, error)
+	// SearchWithEngine(ctx context.Context, engine EngineType, request SearchRequest) (*SearchResponse, error)
 
 	// Returns an embedding using the provided request.
-	Embeddings(ctx context.Context, request EmbeddingsRequest) (*EmbeddingsResponse, error)
+	// Embeddings(ctx context.Context, request EmbeddingsRequest) (*EmbeddingsResponse, error)
 
+	CreateImage(ctx context.Context, request CreateImageReq) (*CreateImageResp, error)
 	DefaultEngine() EngineType
 }
 
