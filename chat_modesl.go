@@ -92,7 +92,7 @@ func (cr *ChatCompletionResponse) Role() string {
 	if cr != nil && len(cr.Choices) > 0 {
 		return cr.Choices[0].Message.Role
 	}
-	return ""
+	return "assistant"
 }
 
 func (cr *ChatCompletionResponse) Reset() {
