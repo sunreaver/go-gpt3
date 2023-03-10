@@ -66,10 +66,10 @@ type ChatCompletionResponseChoice struct {
 
 // CompletionResponse is the full response from a request to the completions API
 type ChatCompletionResponse struct {
-	ID      string                         `json:"id"`
-	Object  string                         `json:"object"`
-	Created int                            `json:"created"`
-	Model   string                         `json:"model"`
+	// ID      string                         `json:"id"`
+	// Object  string                         `json:"object"`
+	// Created int                            `json:"created"`
+	// Model   string                         `json:"model"`
 	Choices []ChatCompletionResponseChoice `json:"choices"`
 	// Usage   ChatCompletionResponseUsage    `json:"usage"`
 }
@@ -93,6 +93,13 @@ func (cr *ChatCompletionResponse) Role() string {
 		return cr.Choices[0].Message.Role
 	}
 	return ""
+}
+
+func (cr *ChatCompletionResponse) Reset() {
+	if cr != nil {
+		*cr = ChatCompletionResponse{}
+	}
+	return
 }
 
 // CompletionResponseUsage is the object that returns how many tokens the completion's request used

@@ -68,6 +68,7 @@ type CompletionResponseInterface interface {
 	CanContinue() bool
 	Text() string
 	Role() string
+	Reset()
 }
 
 // A Client is an API client to communicate with the OpenAI gpt-3 APIs
@@ -254,6 +255,7 @@ func (c *client) sendAndOnData(req *http.Request, output CompletionResponseInter
 		if bytes.HasPrefix(line, doneSequence) {
 			break
 		}
+		output.Reset()
 		if err := json.Unmarshal(line, output); err != nil {
 			return fmt.Errorf("invalid json stream data: %v", err)
 		}

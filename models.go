@@ -104,20 +104,20 @@ type LogprobResult struct {
 
 // CompletionResponseChoice is one of the choices returned in the response to the Completions API
 type CompletionResponseChoice struct {
-	Text         string        `json:"text"`
-	Index        int           `json:"index"`
-	LogProbs     LogprobResult `json:"logprobs"`
-	FinishReason string        `json:"finish_reason"`
+	Text string `json:"text"`
+	// Index        int           `json:"index"`
+	// LogProbs     LogprobResult `json:"logprobs"`
+	FinishReason string `json:"finish_reason"`
 }
 
 // CompletionResponse is the full response from a request to the completions API
 type CompletionResponse struct {
-	ID      string                     `json:"id"`
-	Object  string                     `json:"object"`
-	Created int                        `json:"created"`
-	Model   string                     `json:"model"`
+	// ID      string                     `json:"id"`
+	// Object  string                     `json:"object"`
+	// Created int                        `json:"created"`
+	// Model   string                     `json:"model"`
 	Choices []CompletionResponseChoice `json:"choices"`
-	Usage   CompletionResponseUsage    `json:"usage"`
+	// Usage   CompletionResponseUsage    `json:"usage"`
 }
 
 func (cr *CompletionResponse) CanContinue() bool {
@@ -136,6 +136,13 @@ func (cr *CompletionResponse) Text() string {
 
 func (cr *CompletionResponse) Role() string {
 	return "user"
+}
+
+func (cr *CompletionResponse) Reset() {
+	if cr != nil {
+		*cr = CompletionResponse{}
+	}
+	return
 }
 
 // CompletionResponseUsage is the object that returns how many tokens the completion's request used
