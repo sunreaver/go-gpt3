@@ -115,6 +115,8 @@ type Client interface {
 
 	CreateImage(ctx context.Context, request CreateImageReq) (*CreateImageResp, error)
 	DefaultEngine() EngineType
+	Stop() []string
+	Maxtokens() *int
 }
 
 type client struct {
@@ -124,6 +126,8 @@ type client struct {
 	httpClient    *http.Client
 	defaultEngine EngineType
 	idOrg         string
+	stop          []string
+	maxtokens     int
 }
 
 // NewClient returns a new OpenAI GPT-3 API client. An apiKey is required to use the client
@@ -139,6 +143,7 @@ func NewClient(apiKey string, options ...ClientOption) Client {
 		httpClient:    httpClient,
 		defaultEngine: DefaultEngine,
 		idOrg:         "",
+		maxtokens:     256,
 	}
 	for _, o := range options {
 		o(c)
@@ -208,6 +213,14 @@ func (c *client) CompletionWithEngine(ctx context.Context, engine EngineType, re
 
 func (c *client) CompletionStream(ctx context.Context, request CompletionRequest, onData func(CompletionResponseInterface)) error {
 	return c.CompletionStreamWithEngine(ctx, c.defaultEngine, request, onData)
+}
+
+func (c *client) Stop() []string {
+	return c.stop
+}
+
+func (c *client) Maxtokens() *int {
+	return IntPtr(c.maxtokens)
 }
 
 var (

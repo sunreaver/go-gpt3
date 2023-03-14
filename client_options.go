@@ -32,6 +32,22 @@ func WithUserAgent(userAgent string) ClientOption {
 	}
 }
 
+// Stop
+func WithStop(stop []string) ClientOption {
+	return func(c *client) error {
+		c.stop = stop
+		return nil
+	}
+}
+
+// maxtokens
+func WithMaxtokens(maxtokens int) ClientOption {
+	return func(c *client) error {
+		c.maxtokens = maxtokens
+		return nil
+	}
+}
+
 // WithBaseURL is a client option that allows you to override the default base url of the client.
 // The default base url is "https://api.openai.com/v1"
 func WithBaseURL(baseURL string) ClientOption {
