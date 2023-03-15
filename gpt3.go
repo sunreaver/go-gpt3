@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/r3labs/sse/v2"
 )
 
 type EngineType string
@@ -226,11 +225,6 @@ func (c *client) Maxtokens() *int {
 	return IntPtr(c.maxtokens)
 }
 
-var (
-	dataPrefix   = []byte("data: ")
-	doneSequence = []byte("[DONE]")
-)
-
 func (c *client) CompletionStreamWithEngine(
 	ctx context.Context,
 	engine EngineType,
@@ -251,29 +245,27 @@ func (c *client) sendAndOnData(req *http.Request, output CompletionResponseInter
 		return err
 	}
 
-	reader := sse.NewEventStreamReader(resp.Body, 1<<16)
-	// events.ReadEvent()
-	// reader := bufio.NewReader(resp.Body)
+	reader := newEventStreamReader(resp.Body, 1<<16)
 	defer resp.Body.Close()
 
+LOOP:
 	for {
 		event, err := reader.ReadEvent()
 		if err != nil {
 			if err == io.EOF {
-				return nil
+				break LOOP
 			}
 			return errors.Wrap(err, "ReadEvent")
 		}
 
 		// If we get an error, ignore it.
-		var msg *sse.Event
-		if msg, err = c.processEvent(event); err != nil {
+		var msg *Event
+		if msg, err = processEvent(event); err != nil {
 			return errors.Wrap(err, "ProcessEvent")
 		}
 		output.Reset()
-		if !bytes.Equal(msg.Event, []byte("messages")) {
-			fmt.Println(string(msg.Event), string(msg.Comment), string(msg.ID), string(msg.Retry), string(msg.Data))
-			continue
+		if bytes.Equal(msg.Data, doneSequence) {
+			break LOOP
 		}
 		if err := json.Unmarshal(msg.Data, output); err != nil {
 			return errors.Errorf("invalid json stream data: %v", err)
@@ -281,75 +273,7 @@ func (c *client) sendAndOnData(req *http.Request, output CompletionResponseInter
 
 		onData(output)
 	}
-
 	return nil
-}
-
-var (
-	headerID    = []byte("id:")
-	headerData  = []byte("data:")
-	headerEvent = []byte("event:")
-	headerRetry = []byte("retry:")
-)
-
-func trimHeader(size int, data []byte) []byte {
-	if data == nil || len(data) < size {
-		return data
-	}
-
-	data = data[size:]
-	// Remove optional leading whitespace
-	if len(data) > 0 && data[0] == 32 {
-		data = data[1:]
-	}
-	// Remove trailing new line
-	if len(data) > 0 && data[len(data)-1] == 10 {
-		data = data[:len(data)-1]
-	}
-	return data
-}
-
-func (c *client) processEvent(msg []byte) (event *sse.Event, err error) {
-	var e sse.Event
-
-	if len(msg) < 1 {
-		return nil, errors.New("event message was empty")
-	}
-
-	// Normalize the crlf to lf to make it easier to split the lines.
-	// Split the line by "\n" or "\r", per the spec.
-	for _, line := range bytes.FieldsFunc(msg, func(r rune) bool { return r == '\n' || r == '\r' }) {
-		switch {
-		case bytes.HasPrefix(line, headerID):
-			e.ID = append([]byte(nil), trimHeader(len(headerID), line)...)
-		case bytes.HasPrefix(line, headerData):
-			// The spec allows for multiple data fields per event, concatenated them with "\n".
-			e.Data = append(e.Data[:], append(trimHeader(len(headerData), line), byte('\n'))...)
-		// The spec says that a line that simply contains the string "data" should be treated as a data field with an empty body.
-		case bytes.Equal(line, bytes.TrimSuffix(headerData, []byte(":"))):
-			e.Data = append(e.Data, byte('\n'))
-		case bytes.HasPrefix(line, headerEvent):
-			e.Event = append([]byte(nil), trimHeader(len(headerEvent), line)...)
-		case bytes.HasPrefix(line, headerRetry):
-			e.Retry = append([]byte(nil), trimHeader(len(headerRetry), line)...)
-		default:
-			// Ignore any garbage that doesn't match what we're looking for.
-		}
-	}
-
-	// Trim the last "\n" per the spec.
-	e.Data = bytes.TrimSuffix(e.Data, []byte("\n"))
-
-	// if c.EncodingBase64 {
-	// 	buf := make([]byte, base64.StdEncoding.DecodedLen(len(e.Data)))
-
-	// 	n, err := base64.StdEncoding.Decode(buf, e.Data)
-	// 	if err != nil {
-	// 		err = fmt.Errorf("failed to decode event message: %s", err)
-	// 	}
-	// 	e.Data = buf[:n]
-	// }
-	return &e, err
 }
 
 func (c *client) Edits(ctx context.Context, request EditsRequest) (*EditsResponse, error) {
