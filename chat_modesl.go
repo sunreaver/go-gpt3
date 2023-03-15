@@ -71,7 +71,7 @@ type ChatCompletionResponse struct {
 	// Created int                            `json:"created"`
 	// Model   string                         `json:"model"`
 	Choices []ChatCompletionResponseChoice `json:"choices"`
-	// Usage   ChatCompletionResponseUsage    `json:"usage"`
+	Usage   ChatCompletionResponseUsage    `json:"usage"`
 }
 
 func (cr *ChatCompletionResponse) CanContinue() bool {
@@ -95,6 +95,13 @@ func (cr *ChatCompletionResponse) Role() string {
 	return "assistant"
 }
 
+func (cr *ChatCompletionResponse) TotalTokens() int {
+	if cr != nil {
+		return cr.Usage.TotalTokens
+	}
+	return 0
+}
+
 func (cr *ChatCompletionResponse) Reset() {
 	if cr != nil {
 		*cr = ChatCompletionResponse{}
@@ -104,9 +111,9 @@ func (cr *ChatCompletionResponse) Reset() {
 
 // CompletionResponseUsage is the object that returns how many tokens the completion's request used
 type ChatCompletionResponseUsage struct {
-	PromptTokens     int `json:"prompt_tokens"`
-	CompletionTokens int `json:"completion_tokens"`
-	TotalTokens      int `json:"total_tokens"`
+	// PromptTokens     int `json:"prompt_tokens"`
+	// CompletionTokens int `json:"completion_tokens"`
+	TotalTokens int `json:"total_tokens"`
 }
 
 func (c *client) ChatCompletion(ctx context.Context, request ChatCompletionRequest) (*ChatCompletionResponse, error) {

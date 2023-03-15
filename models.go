@@ -117,7 +117,7 @@ type CompletionResponse struct {
 	// Created int                        `json:"created"`
 	// Model   string                     `json:"model"`
 	Choices []CompletionResponseChoice `json:"choices"`
-	// Usage   CompletionResponseUsage    `json:"usage"`
+	Usage   CompletionResponseUsage    `json:"usage"`
 }
 
 func (cr *CompletionResponse) CanContinue() bool {
@@ -138,6 +138,13 @@ func (cr *CompletionResponse) Role() string {
 	return "user"
 }
 
+func (cr *CompletionResponse) TotalTokens() int {
+	if cr != nil {
+		return cr.Usage.TotalTokens
+	}
+	return 0
+}
+
 func (cr *CompletionResponse) Reset() {
 	if cr != nil {
 		*cr = CompletionResponse{}
@@ -147,9 +154,9 @@ func (cr *CompletionResponse) Reset() {
 
 // CompletionResponseUsage is the object that returns how many tokens the completion's request used
 type CompletionResponseUsage struct {
-	PromptTokens     int `json:"prompt_tokens"`
-	CompletionTokens int `json:"completion_tokens"`
-	TotalTokens      int `json:"total_tokens"`
+	// PromptTokens     int `json:"prompt_tokens"`
+	// CompletionTokens int `json:"completion_tokens"`
+	TotalTokens int `json:"total_tokens"`
 }
 
 // EditsResponse is the full response from a request to the edits API

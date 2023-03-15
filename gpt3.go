@@ -69,6 +69,7 @@ type CompletionResponseInterface interface {
 	Text() string
 	Role() string
 	Reset()
+	TotalTokens() int
 }
 
 // A Client is an API client to communicate with the OpenAI gpt-3 APIs
