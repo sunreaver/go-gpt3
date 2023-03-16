@@ -3,73 +3,98 @@ package gpt3
 import (
 	"context"
 	"errors"
+	"strings"
 )
 
 type GPT3client struct {
 	client Client
+
+	stop          []string
+	maxtokens     int
+	systemprompt  string
+	defaultEngine EngineType
 }
 
 func MakeGPT3Client(apikey string, options ...ClientOption) *GPT3client {
-	return &GPT3client{
-		client: NewClient(
-			apikey,
-			options...),
+	c := &GPT3client{
+		defaultEngine: DefaultEngine,
+		maxtokens:     256,
+		stop:          nil,
 	}
+	c.client = NewClient(
+		apikey,
+		c,
+		options...)
+
+	return c
 }
 
 func (c *GPT3client) DoStream(ctx context.Context, say []ChatCompletionMessage, fn func(cr CompletionResponseInterface)) error {
 	if len(say) == 0 {
 		return errors.New("您得说些什么。")
 	}
-	if c.client.DefaultEngine() == Gpt35TurboEngine ||
-		c.client.DefaultEngine() == Gpt35Turbo0301Engine {
+	tmp := append([]ChatCompletionMessage{
+		{
+			Role:    "system",
+			Content: c.systemprompt,
+		},
+	}, say...)
+	if c.defaultEngine == Gpt35TurboEngine ||
+		c.defaultEngine == Gpt35Turbo0301Engine {
 		request := ChatCompletionRequest{
-			Model:     c.client.DefaultEngine(),
-			Messages:  say,
-			MaxTokens: c.client.Maxtokens(),
+			Model:     c.defaultEngine,
+			Messages:  tmp,
+			MaxTokens: &c.maxtokens,
 		}
 		return c.client.ChatCompletionStream(ctx, request, fn)
 	}
-	// 组装 内容
-	text := make([]string, len(say))
-	for idx, v := range say {
-		text[idx] = v.Content
-	}
-	// text := strings.Builder{}
-	// for _, v := range say {
-	// 	text.WriteString(v.Content)
-	// }
-	// tstr := text.String()
-	// // max 4096 限制
-	// if l := len(tstr); l > 4096 {
-	// 	tstr = string([]rune(tstr[l-4096:])[2:])
-	// }
-	request := CompletionRequest{
-		Prompt:    text,
-		MaxTokens: c.client.Maxtokens(),
-	}
-	return c.client.CompletionStream(ctx, request, fn)
+	return c.client.CompletionStreamWithEngine(ctx, c.defaultEngine, c.makeCompletionRequest(tmp), fn)
 }
 
 func (c *GPT3client) DoOnce(ctx context.Context, say []ChatCompletionMessage) (CompletionResponseInterface, error) {
 	if len(say) == 0 {
 		return nil, errors.New("您得说些什么。")
 	}
-	if c.client.DefaultEngine() == Gpt35TurboEngine ||
-		c.client.DefaultEngine() == Gpt35Turbo0301Engine {
+	tmp := append([]ChatCompletionMessage{
+		{
+			Role:    "system",
+			Content: c.systemprompt,
+		},
+	}, say...)
+	if c.defaultEngine == Gpt35TurboEngine ||
+		c.defaultEngine == Gpt35Turbo0301Engine {
 		request := ChatCompletionRequest{
 			Model:     Gpt35TurboEngine,
-			Messages:  say,
-			Stop:      c.client.Stop(),
-			MaxTokens: c.client.Maxtokens(),
+			Messages:  tmp,
+			Stop:      c.stop,
+			MaxTokens: &c.maxtokens,
 		}
 		return c.client.ChatCompletion(ctx, request)
 	}
-	request := CompletionRequest{
-		Prompt:    []string{say[0].Content},
-		MaxTokens: c.client.Maxtokens(),
+	return c.client.CompletionWithEngine(ctx, c.defaultEngine, c.makeCompletionRequest(tmp))
+}
+
+func (c *GPT3client) makeCompletionRequest(say []ChatCompletionMessage) CompletionRequest {
+	// 组装 内容
+	text := strings.Builder{}
+	system := ""
+	for _, v := range say {
+		if v.Role == "system" {
+			system = v.Content
+		} else {
+			text.WriteString(v.Content)
+		}
 	}
-	return c.client.Completion(ctx, request)
+	syslen := len(system)
+	tstr := text.String()
+	// max 4096 限制
+	if maxlen, l := 4096-syslen, len(tstr); l > maxlen {
+		tstr = string([]rune(tstr[l-maxlen:])[2:])
+	}
+	return CompletionRequest{
+		Prompt:    []string{system + tstr},
+		MaxTokens: &c.maxtokens,
+	}
 }
 
 func (c *GPT3client) CreateImage(ctx context.Context, say CreateImageReq) (*CreateImageResp, error) {

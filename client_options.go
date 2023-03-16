@@ -19,7 +19,7 @@ func WithOrg(id string) ClientOption {
 // WithDefaultEngine is a client option that allows you to override the default engine of the client
 func WithDefaultEngine(engine EngineType) ClientOption {
 	return func(c *client) error {
-		c.defaultEngine = engine
+		c.gpt3.defaultEngine = engine
 		return nil
 	}
 }
@@ -28,22 +28,6 @@ func WithDefaultEngine(engine EngineType) ClientOption {
 func WithUserAgent(userAgent string) ClientOption {
 	return func(c *client) error {
 		c.userAgent = userAgent
-		return nil
-	}
-}
-
-// Stop
-func WithStop(stop []string) ClientOption {
-	return func(c *client) error {
-		c.stop = stop
-		return nil
-	}
-}
-
-// maxtokens
-func WithMaxtokens(maxtokens int) ClientOption {
-	return func(c *client) error {
-		c.maxtokens = maxtokens
 		return nil
 	}
 }
@@ -74,6 +58,30 @@ func WithHTTPClient(httpClient *http.Client) ClientOption {
 func WithTimeout(timeout time.Duration) ClientOption {
 	return func(c *client) error {
 		c.httpClient.Timeout = timeout
+		return nil
+	}
+}
+
+// Stop
+func WithStop(stop []string) ClientOption {
+	return func(c *client) error {
+		c.gpt3.stop = stop
+		return nil
+	}
+}
+
+// maxtokens
+func WithMaxtokens(maxtokens int) ClientOption {
+	return func(c *client) error {
+		c.gpt3.maxtokens = maxtokens
+		return nil
+	}
+}
+
+// 注入系统提示
+func WithSystemPrompt(prompt string) ClientOption {
+	return func(c *client) error {
+		c.gpt3.systemprompt = prompt
 		return nil
 	}
 }

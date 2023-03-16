@@ -30,7 +30,7 @@ const (
 	BabbageEngine        EngineType = "babbage"
 	CurieEngine          EngineType = "curie"
 	DavinciEngine        EngineType = "davinci"
-	DefaultEngine        EngineType = DavinciEngine
+	DefaultEngine        EngineType = Gpt35TurboEngine
 )
 
 type EmbeddingEngine string
@@ -85,17 +85,17 @@ type Client interface {
 
 	// Completion creates a completion with the default engine. This is the main endpoint of the API
 	// which auto-completes based on the given prompt.
-	Completion(ctx context.Context, request CompletionRequest) (*CompletionResponse, error)
+	// Completion(ctx context.Context, request CompletionRequest) (*CompletionResponse, error)
 
 	// CompletionStream creates a completion with the default engine and streams the results through
 	// multiple calls to onData.
-	CompletionStream(ctx context.Context, request CompletionRequest, onData func(CompletionResponseInterface)) error
+	// CompletionStream(ctx context.Context, request CompletionRequest, onData func(CompletionResponseInterface)) error
 
 	// CompletionWithEngine is the same as Completion except allows overriding the default engine on the client
-	// CompletionWithEngine(ctx context.Context, engine EngineType, request CompletionRequest) (*CompletionResponse, error)
+	CompletionWithEngine(ctx context.Context, engine EngineType, request CompletionRequest) (*CompletionResponse, error)
 
 	// CompletionStreamWithEngine is the same as CompletionStream except allows overriding the default engine on the client
-	// CompletionStreamWithEngine(ctx context.Context, engine EngineType, request CompletionRequest, onData func(CompletionResponseInterface)) error
+	CompletionStreamWithEngine(ctx context.Context, engine EngineType, request CompletionRequest, onData func(CompletionResponseInterface)) error
 
 	ChatCompletion(ctx context.Context, request ChatCompletionRequest) (*ChatCompletionResponse, error)
 
@@ -116,45 +116,37 @@ type Client interface {
 	// Embeddings(ctx context.Context, request EmbeddingsRequest) (*EmbeddingsResponse, error)
 
 	CreateImage(ctx context.Context, request CreateImageReq) (*CreateImageResp, error)
-	DefaultEngine() EngineType
-	Stop() []string
-	Maxtokens() *int
 }
 
 type client struct {
-	baseURL       string
-	apiKey        string
-	userAgent     string
-	httpClient    *http.Client
-	defaultEngine EngineType
-	idOrg         string
-	stop          []string
-	maxtokens     int
+	baseURL    string
+	apiKey     string
+	userAgent  string
+	httpClient *http.Client
+	idOrg      string
+
+	gpt3 *GPT3client
 }
 
 // NewClient returns a new OpenAI GPT-3 API client. An apiKey is required to use the client
-func NewClient(apiKey string, options ...ClientOption) Client {
+func NewClient(apiKey string, gpt3 *GPT3client, options ...ClientOption) Client {
 	httpClient := &http.Client{
 		Timeout: time.Duration(defaultTimeoutSeconds * time.Second),
 	}
 
 	c := &client{
-		userAgent:     defaultUserAgent,
-		apiKey:        apiKey,
-		baseURL:       defaultBaseURL,
-		httpClient:    httpClient,
-		defaultEngine: DefaultEngine,
-		idOrg:         "",
-		maxtokens:     256,
+		userAgent:  defaultUserAgent,
+		apiKey:     apiKey,
+		baseURL:    defaultBaseURL,
+		httpClient: httpClient,
+		idOrg:      "",
+
+		gpt3: gpt3,
 	}
 	for _, o := range options {
 		o(c)
 	}
 	return c
-}
-
-func (c *client) DefaultEngine() EngineType {
-	return c.defaultEngine
 }
 
 func (c *client) Engines(ctx context.Context) (*EnginesResponse, error) {
@@ -191,10 +183,6 @@ func (c *client) Engine(ctx context.Context, engine EngineType) (*EngineObject, 
 	return output, nil
 }
 
-func (c *client) Completion(ctx context.Context, request CompletionRequest) (*CompletionResponse, error) {
-	return c.CompletionWithEngine(ctx, c.defaultEngine, request)
-}
-
 func (c *client) CompletionWithEngine(ctx context.Context, engine EngineType, request CompletionRequest) (*CompletionResponse, error) {
 	request.Stream = false
 	req, err := c.newRequest(ctx, "POST", fmt.Sprintf("/engines/%s/completions", engine), request)
@@ -211,18 +199,6 @@ func (c *client) CompletionWithEngine(ctx context.Context, engine EngineType, re
 		return nil, err
 	}
 	return output, nil
-}
-
-func (c *client) CompletionStream(ctx context.Context, request CompletionRequest, onData func(CompletionResponseInterface)) error {
-	return c.CompletionStreamWithEngine(ctx, c.defaultEngine, request, onData)
-}
-
-func (c *client) Stop() []string {
-	return c.stop
-}
-
-func (c *client) Maxtokens() *int {
-	return IntPtr(c.maxtokens)
 }
 
 func (c *client) CompletionStreamWithEngine(
@@ -293,9 +269,9 @@ func (c *client) Edits(ctx context.Context, request EditsRequest) (*EditsRespons
 	return output, nil
 }
 
-func (c *client) Search(ctx context.Context, request SearchRequest) (*SearchResponse, error) {
-	return c.SearchWithEngine(ctx, c.defaultEngine, request)
-}
+// func (c *client) Search(ctx context.Context, request SearchRequest) (*SearchResponse, error) {
+// 	return c.SearchWithEngine(ctx, c.defaultEngine, request)
+// }
 
 func (c *client) SearchWithEngine(ctx context.Context, engine EngineType, request SearchRequest) (*SearchResponse, error) {
 	req, err := c.newRequest(ctx, "POST", fmt.Sprintf("/engines/%s/search", engine), request)
