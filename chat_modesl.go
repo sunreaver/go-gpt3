@@ -44,7 +44,7 @@ type ChatCompletionResponseChoiceMessage struct {
 // CompletionResponseChoice is one of the choices returned in the response to the Completions API
 type ChatCompletionResponseChoice struct {
 	// Index        int                                 `json:"index"`
-	Message      ChatCompletionResponseChoiceMessage `json:"delta"`
+	Message      ChatCompletionResponseChoiceMessage `json:"message"`
 	FinishReason string                              `json:"finish_reason"`
 }
 
@@ -109,6 +109,58 @@ func (cr *ChatCompletionResponse) Reset() {
 	return
 }
 
+// ChatStreamCompletionResponseChoice is one of the choices returned in the response to the Completions API
+type ChatStreamCompletionResponseChoice struct {
+	// Index        int                                 `json:"index"`
+	Message      ChatCompletionResponseChoiceMessage `json:"delta"`
+	FinishReason string                              `json:"finish_reason"`
+}
+
+// ChatStreamCompletionResponse is the full response from a request to the completions API
+type ChatStreamCompletionResponse struct {
+	// ID      string                         `json:"id"`
+	// Object  string                         `json:"object"`
+	// Created int                            `json:"created"`
+	// Model   string                         `json:"model"`
+	Choices []ChatStreamCompletionResponseChoice `json:"choices"`
+	Usage   ChatCompletionResponseUsage          `json:"usage"`
+}
+
+func (cr *ChatStreamCompletionResponse) CanContinue() bool {
+	if cr != nil && len(cr.Choices) > 0 {
+		return cr.Choices[0].FinishReason == "length"
+	}
+	return false
+}
+
+func (cr *ChatStreamCompletionResponse) Text() string {
+	if cr != nil && len(cr.Choices) > 0 {
+		return cr.Choices[0].Message.Content
+	}
+	return ""
+}
+
+func (cr *ChatStreamCompletionResponse) Role() string {
+	if cr != nil && len(cr.Choices) > 0 {
+		return cr.Choices[0].Message.Role
+	}
+	return "assistant"
+}
+
+func (cr *ChatStreamCompletionResponse) TotalTokens() int {
+	if cr != nil {
+		return cr.Usage.TotalTokens
+	}
+	return 0
+}
+
+func (cr *ChatStreamCompletionResponse) Reset() {
+	if cr != nil {
+		*cr = ChatStreamCompletionResponse{}
+	}
+	return
+}
+
 // CompletionResponseUsage is the object that returns how many tokens the completion's request used
 type ChatCompletionResponseUsage struct {
 	// PromptTokens     int `json:"prompt_tokens"`
@@ -148,5 +200,5 @@ func (c *client) ChatCompletionStreamWithEngine(
 	if err != nil {
 		return err
 	}
-	return c.sendAndOnData(req, new(ChatCompletionResponse), onData)
+	return c.sendAndOnData(req, new(ChatStreamCompletionResponse), onData)
 }
