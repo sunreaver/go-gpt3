@@ -41,10 +41,9 @@ func (c *GPT3client) DoStream(ctx context.Context, say []ChatCompletionMessage, 
 	}, say...)
 	if c.defaultEngine == Gpt35TurboEngine ||
 		c.defaultEngine == Gpt35Turbo0301Engine {
-		request := ChatCompletionRequest{
-			Model:     c.defaultEngine,
-			Messages:  tmp,
-			MaxTokens: &c.maxtokens,
+		request, err := c.makeChatCompletionRequest(tmp[0], say...)
+		if err != nil {
+			return err
 		}
 		return c.client.ChatCompletionStream(ctx, request, fn)
 	}
@@ -63,15 +62,37 @@ func (c *GPT3client) DoOnce(ctx context.Context, say []ChatCompletionMessage) (C
 	}, say...)
 	if c.defaultEngine == Gpt35TurboEngine ||
 		c.defaultEngine == Gpt35Turbo0301Engine {
-		request := ChatCompletionRequest{
-			Model:     Gpt35TurboEngine,
-			Messages:  tmp,
-			Stop:      c.stop,
-			MaxTokens: &c.maxtokens,
+		request, err := c.makeChatCompletionRequest(tmp[0], say...)
+		if err != nil {
+			return nil, err
 		}
 		return c.client.ChatCompletion(ctx, request)
 	}
 	return c.client.CompletionWithEngine(ctx, c.defaultEngine, c.makeCompletionRequest(tmp))
+}
+
+func (c *GPT3client) makeChatCompletionRequest(system ChatCompletionMessage, say ...ChatCompletionMessage) (ChatCompletionRequest, error) {
+	// 组装 内容
+	maxlen := 3896 - len(system.Content) // 不用 4096 是防止刚好贴边容易出问题；预留200空闲
+	tmpCount := 0
+CLIP:
+	for i := len(say) - 1; i >= 0; i-- {
+		tmpCount += len(say[i].Content)
+		if tmpCount > maxlen {
+			if i == len(say)-1 {
+				// 第一个就超出
+				return ChatCompletionRequest{}, errors.New("输入内容过长")
+			}
+			say = say[i+1:] // 丢弃此段内容
+			break CLIP
+		}
+	}
+	return ChatCompletionRequest{
+		Model:     c.defaultEngine,
+		Messages:  say,
+		Stop:      c.stop,
+		MaxTokens: &c.maxtokens,
+	}, nil
 }
 
 func (c *GPT3client) makeCompletionRequest(say []ChatCompletionMessage) CompletionRequest {
@@ -88,7 +109,7 @@ func (c *GPT3client) makeCompletionRequest(say []ChatCompletionMessage) Completi
 	syslen := len(system)
 	tstr := text.String()
 	// max 4096 限制
-	if maxlen, l := 4096-syslen, len(tstr); l > maxlen {
+	if maxlen, l := 3896-syslen, len(tstr); l > maxlen {
 		tstr = string([]rune(tstr[l-maxlen:])[2:])
 	}
 	return CompletionRequest{
