@@ -2,8 +2,9 @@ package gpt3
 
 import (
 	"context"
-	"errors"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 type GPT3client struct {
@@ -81,7 +82,7 @@ CLIP:
 		if tmpCount > maxlen {
 			if i == len(say)-1 {
 				// 第一个就超出
-				return ChatCompletionRequest{}, errors.New("输入内容过长")
+				return ChatCompletionRequest{}, errors.Errorf("输入内容过长; 最长%v, 当前%v", maxlen, tmpCount)
 			}
 			say = say[i+1:] // 丢弃此段内容
 			break CLIP
