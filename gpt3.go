@@ -120,7 +120,6 @@ type Client interface {
 
 type client struct {
 	baseURL    string
-	apiKey     string
 	userAgent  string
 	httpClient *http.Client
 	idOrg      string
@@ -128,15 +127,14 @@ type client struct {
 	gpt3 *GPT3client
 }
 
-// NewClient returns a new OpenAI GPT-3 API client. An apiKey is required to use the client
-func NewClient(apiKey string, gpt3 *GPT3client, options ...ClientOption) Client {
+// NewClient returns a new OpenAI GPT-3 API client. An authtoken is required to use the client
+func NewClient(gpt3 *GPT3client, options ...ClientOption) Client {
 	httpClient := &http.Client{
 		Timeout: time.Duration(defaultTimeoutSeconds * time.Second),
 	}
 
 	c := &client{
 		userAgent:  defaultUserAgent,
-		apiKey:     apiKey,
 		baseURL:    defaultBaseURL,
 		httpClient: httpClient,
 		idOrg:      "",
@@ -377,6 +375,10 @@ func (c *client) newRequest(ctx context.Context, method, path string, payload in
 		req.Header.Set("OpenAI-Organization", c.idOrg)
 	}
 	req.Header.Set("Content-type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.apiKey))
+	if len(c.gpt3.authtoken) > 0 {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.gpt3.authtoken))
+	} else if len(c.gpt3.apikey) > 0 {
+		req.Header.Set("api-key", c.gpt3.apikey)
+	}
 	return req, nil
 }

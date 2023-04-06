@@ -85,3 +85,29 @@ func WithSystemPrompt(prompt string) ClientOption {
 		return nil
 	}
 }
+
+// 注入请求query参数，字符串格式: key1=v1&key2=v2
+func WithQuery(query string) ClientOption {
+	return func(c *client) error {
+		c.gpt3.query = query
+		return nil
+	}
+}
+
+// 注入apikey；将会放在header中: api-key: YOUR_API_KEY
+// 用户Azure的权限。
+func WithApiKey(apikey string) ClientOption {
+	return func(c *client) error {
+		c.gpt3.apikey = apikey
+		return nil
+	}
+}
+
+// 注入Authtoken；将会放在header中: Authorization: Bearer YOUR_AUTH_TOKEN.
+// 用户Openai的权限。
+func WithAuthtoken(apikey string) ClientOption {
+	return func(c *client) error {
+		c.gpt3.apikey = apikey
+		return nil
+	}
+}

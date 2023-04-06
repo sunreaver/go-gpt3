@@ -13,17 +13,19 @@ type GPT3client struct {
 	stop          []string
 	maxtokens     int
 	systemprompt  string
+	query         string
+	apikey        string
+	authtoken     string
 	defaultEngine EngineType
 }
 
-func MakeGPT3Client(apikey string, options ...ClientOption) *GPT3client {
+func MakeGPT3Client(options ...ClientOption) *GPT3client {
 	c := &GPT3client{
 		defaultEngine: DefaultEngine,
 		maxtokens:     256,
 		stop:          nil,
 	}
 	c.client = NewClient(
-		apikey,
 		c,
 		options...)
 
