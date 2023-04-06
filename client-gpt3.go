@@ -36,42 +36,46 @@ func (c *GPT3client) DoStream(ctx context.Context, say []ChatCompletionMessage, 
 	if len(say) == 0 {
 		return errors.New("您得说些什么。")
 	}
-	tmp := append([]ChatCompletionMessage{
-		{
-			Role:    "system",
-			Content: c.systemprompt,
-		},
-	}, say...)
 	if c.defaultEngine == Gpt35TurboEngine ||
 		c.defaultEngine == Gpt35Turbo0301Engine {
-		request, err := c.makeChatCompletionRequest(tmp[0], say...)
+		request, err := c.makeChatCompletionRequest(ChatCompletionMessage{
+			Role:    "system",
+			Content: c.systemprompt,
+		}, say...)
 		if err != nil {
 			return err
 		}
 		return c.client.ChatCompletionStream(ctx, request, fn)
 	}
-	return c.client.CompletionStreamWithEngine(ctx, c.defaultEngine, c.makeCompletionRequest(tmp), fn)
+	return c.client.CompletionStreamWithEngine(ctx, c.defaultEngine, c.makeCompletionRequest(append([]ChatCompletionMessage{
+		{
+			Role:    "system",
+			Content: c.systemprompt,
+		},
+	}, say...)), fn)
 }
 
 func (c *GPT3client) DoOnce(ctx context.Context, say []ChatCompletionMessage) (CompletionResponseInterface, error) {
 	if len(say) == 0 {
 		return nil, errors.New("您得说些什么。")
 	}
-	tmp := append([]ChatCompletionMessage{
-		{
-			Role:    "system",
-			Content: c.systemprompt,
-		},
-	}, say...)
 	if c.defaultEngine == Gpt35TurboEngine ||
 		c.defaultEngine == Gpt35Turbo0301Engine {
-		request, err := c.makeChatCompletionRequest(tmp[0], say...)
+		request, err := c.makeChatCompletionRequest(ChatCompletionMessage{
+			Role:    "system",
+			Content: c.systemprompt,
+		}, say...)
 		if err != nil {
 			return nil, err
 		}
 		return c.client.ChatCompletion(ctx, request)
 	}
-	return c.client.CompletionWithEngine(ctx, c.defaultEngine, c.makeCompletionRequest(tmp))
+	return c.client.CompletionWithEngine(ctx, c.defaultEngine, c.makeCompletionRequest(append([]ChatCompletionMessage{
+		{
+			Role:    "system",
+			Content: c.systemprompt,
+		},
+	}, say...)))
 }
 
 func (c *GPT3client) makeChatCompletionRequest(system ChatCompletionMessage, say ...ChatCompletionMessage) (ChatCompletionRequest, error) {
@@ -92,7 +96,7 @@ CLIP:
 	}
 	return ChatCompletionRequest{
 		Model:     c.defaultEngine,
-		Messages:  say,
+		Messages:  append([]ChatCompletionMessage{system}, say...),
 		Stop:      c.stop,
 		MaxTokens: &c.maxtokens,
 	}, nil
