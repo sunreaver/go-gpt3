@@ -105,9 +105,9 @@ func WithApiKey(apikey string) ClientOption {
 
 // 注入Authtoken；将会放在header中: Authorization: Bearer YOUR_AUTH_TOKEN.
 // 用户Openai的权限。
-func WithAuthtoken(apikey string) ClientOption {
+func WithAuthtoken(authtoken string) ClientOption {
 	return func(c *client) error {
-		c.gpt3.apikey = apikey
+		c.gpt3.authtoken = authtoken
 		return nil
 	}
 }
