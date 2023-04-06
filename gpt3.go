@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
@@ -366,8 +367,14 @@ func (c *client) newRequest(ctx context.Context, method, path string, payload in
 	if err != nil {
 		return nil, err
 	}
-	url := c.baseURL + path
-	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
+	uri, err := url.JoinPath(c.baseURL, path)
+	if err != nil {
+		return nil, err
+	}
+	if len(c.gpt3.query) > 0 {
+		uri += "?" + c.gpt3.query
+	}
+	req, err := http.NewRequestWithContext(ctx, method, uri, bodyReader)
 	if err != nil {
 		return nil, err
 	}
