@@ -90,7 +90,15 @@ CLIP:
 				// 第一个就超出
 				return ChatCompletionRequest{}, errors.Errorf("输入内容过长; 最长%v, 当前%v", maxlen, tmpCount)
 			}
-			say = say[i+1:] // 丢弃此段内容
+			if tstr := []rune(say[i].Content[tmpCount-maxlen:]); len(tstr) > 2 {
+				// 计算可以补多少内容
+				// 截取部分，而不是丢失全部
+				say[i].Content = string(tstr[2:])
+				say = say[i:]
+			} else {
+				// 补得内容过少，则直接丢弃
+				say = say[i+1:]
+			}
 			break CLIP
 		}
 	}
