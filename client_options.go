@@ -111,3 +111,15 @@ func WithAuthtoken(authtoken string) ClientOption {
 		return nil
 	}
 }
+
+// WithMaxRetry 注入重试次数。
+func WithMaxRetry(try int) ClientOption {
+	if try < 1 {
+		try = DefaultRetry
+	}
+
+	return func(c *client) error {
+		c.gpt3.maxretry = try
+		return nil
+	}
+}

@@ -34,6 +34,9 @@ const (
 	DefaultEngine        EngineType = Gpt35TurboEngine
 )
 
+// DefaultRetry 默认重试次数
+const DefaultRetry = 3
+
 type EmbeddingEngine string
 
 const (
@@ -309,13 +312,22 @@ func (c *client) Embeddings(ctx context.Context, request EmbeddingsRequest) (*Em
 }
 
 func (c *client) performRequest(req *http.Request) (*http.Response, error) {
-	resp, err := c.httpClient.Do(req)
+	var err error
+	var resp *http.Response
+	err = retry(func() error {
+		if resp, err = c.httpClient.Do(req); err != nil {
+			return err
+		}
+
+		if err := checkForSuccess(resp); err != nil {
+			return err
+		}
+		return nil
+	}, c.gpt3.maxretry, time.Second)
 	if err != nil {
 		return nil, err
 	}
-	if err := checkForSuccess(resp); err != nil {
-		return nil, err
-	}
+
 	return resp, nil
 }
 
@@ -324,11 +336,17 @@ func checkForSuccess(resp *http.Response) error {
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		return nil
 	}
+
 	defer resp.Body.Close()
+	if resp.StatusCode >= http.StatusBadRequest {
+		return errors.New(http.StatusText(resp.StatusCode))
+	}
+
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read from body: %w", err)
 	}
+
 	var result APIErrorResponse
 	if err := json.Unmarshal(data, &result); err != nil {
 		// if we can't decode the json error then create an unexpected error
