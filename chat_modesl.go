@@ -2,6 +2,8 @@ package gpt3
 
 import (
 	"context"
+	"net/http"
+	"time"
 )
 
 type ChatCompletionMessage struct {
@@ -174,15 +176,22 @@ func (c *client) ChatCompletion(ctx context.Context, request ChatCompletionReque
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.performRequest(req)
+
+	var resp *http.Response
+	err = retry(func() error {
+		resp, err = c.performRequest(req)
+		return err
+	}, c.gpt3.maxretry, time.Second*2)
+
 	if err != nil {
 		return nil, err
 	}
 
 	output := new(ChatCompletionResponse)
-	if err := getResponseObject(resp, output); err != nil {
+	if err = getResponseObject(resp, output); err != nil {
 		return nil, err
 	}
+
 	return output, nil
 }
 

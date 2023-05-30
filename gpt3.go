@@ -312,22 +312,13 @@ func (c *client) Embeddings(ctx context.Context, request EmbeddingsRequest) (*Em
 }
 
 func (c *client) performRequest(req *http.Request) (*http.Response, error) {
-	var err error
-	var resp *http.Response
-	err = retry(func() error {
-		if resp, err = c.httpClient.Do(req); err != nil {
-			return err
-		}
-
-		if err := checkForSuccess(resp); err != nil {
-			return err
-		}
-		return nil
-	}, c.gpt3.maxretry, time.Second)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
-
+	if err := checkForSuccess(resp); err != nil {
+		return nil, err
+	}
 	return resp, nil
 }
 

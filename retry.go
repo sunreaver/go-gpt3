@@ -13,17 +13,17 @@ type RetryHandle func() error
 // retries：重试次数
 // delay：重试间隔
 // 返回值为可选的 err 或 nil
-func retry(fn RetryHandle, retries int, sleep time.Duration) error {
+func retry(fn RetryHandle, retries int, delay time.Duration) error {
 	if err := fn(); err != nil {
 		retries--
 		if retries <= 0 {
 			return err
 		}
 
-		sleep += (time.Duration(rand.Int63n(int64(sleep)))) / 2
-		time.Sleep(sleep)
+		delay += (time.Duration(rand.Int63n(int64(delay)))) / 2
+		time.Sleep(delay)
 
-		return retry(fn, retries, 2*sleep)
+		return retry(fn, retries, 2*delay)
 	}
 
 	return nil
