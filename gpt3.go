@@ -35,7 +35,7 @@ const (
 )
 
 // DefaultRetry 默认重试次数
-const DefaultRetry = 3
+const DefaultRetry = 1
 
 type EmbeddingEngine string
 
@@ -329,10 +329,6 @@ func checkForSuccess(resp *http.Response) error {
 	}
 
 	defer resp.Body.Close()
-	if resp.StatusCode >= http.StatusBadRequest {
-		return errors.New(http.StatusText(resp.StatusCode))
-	}
-
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read from body: %w", err)
