@@ -34,6 +34,9 @@ const (
 	DefaultEngine        EngineType = Gpt35TurboEngine
 )
 
+// DefaultRetry 默认重试次数
+const DefaultRetry = 1
+
 type EmbeddingEngine string
 
 const (
@@ -324,11 +327,13 @@ func checkForSuccess(resp *http.Response) error {
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		return nil
 	}
+
 	defer resp.Body.Close()
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read from body: %w", err)
 	}
+
 	var result APIErrorResponse
 	if err := json.Unmarshal(data, &result); err != nil {
 		// if we can't decode the json error then create an unexpected error
