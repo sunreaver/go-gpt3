@@ -181,7 +181,7 @@ func (c *client) ChatCompletion(ctx context.Context, request ChatCompletionReque
 	err = retry(func() error {
 		resp, err = c.performRequest(req)
 		return err
-	}, c.gpt3.maxretry, time.Second*2)
+	}, c.gpt3.maxretry, time.Second/2)
 
 	if err != nil {
 		return nil, err
