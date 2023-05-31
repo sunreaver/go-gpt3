@@ -22,7 +22,7 @@ func retry(fn RetryHandle, retries int, delay time.Duration) error {
 		// delay += (time.Duration(rand.Int63n(int64(delay)))) / 2
 		time.Sleep(delay)
 
-		return retry(fn, retries, 2*delay)
+		return retry(fn, retries, delay)
 	}
 
 	return nil
