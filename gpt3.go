@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"time"
 
@@ -218,9 +219,20 @@ func (c *client) CompletionStreamWithEngine(
 }
 
 func (c *client) sendAndOnData(req *http.Request, output CompletionResponseInterface, onData func(CompletionResponseInterface)) error {
-	resp, err := c.performRequest(req)
-	if err != nil {
+	var (
+		err  error
+		resp *http.Response
+	)
+
+	var handle = func() error {
+		resp, err = c.performRequest(req)
 		return err
+	}
+
+	// 加入重试机制
+	if err = retry(handle, c.gpt3.maxretry, time.Second/2); err != nil {
+		request, _ := httputil.DumpRequest(req, true)
+		return errors.Wrapf(err, "重试请求失败:url=%v,req=%v", req.URL.String(), string(request))
 	}
 
 	reader := newEventStreamReader(resp.Body, 1<<16)
