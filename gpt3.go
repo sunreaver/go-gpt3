@@ -232,7 +232,7 @@ func (c *client) sendAndOnData(req *http.Request, output CompletionResponseInter
 	// 加入重试机制
 	if err = retry(handle, c.gpt3.maxretry, time.Second/2); err != nil {
 		request, _ := httputil.DumpRequest(req, true)
-		return errors.Wrapf(err, "充实请求失败:url=%v,req=%v", req.URL.String(), string(request))
+		return errors.Wrapf(err, "重试请求失败:url=%v,req=%v", req.URL.String(), string(request))
 	}
 
 	reader := newEventStreamReader(resp.Body, 1<<16)
