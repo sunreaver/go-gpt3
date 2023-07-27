@@ -19,20 +19,10 @@ type EngineType string
 
 // Engine Types
 const (
-	TextAda001Engine     EngineType = "text-ada-001"
-	TextBabbage001Engine EngineType = "text-babbage-001"
-	TextCurie001Engine   EngineType = "text-curie-001"
-	TextDavinci001Engine EngineType = "text-davinci-001"
-	TextDavinci002Engine EngineType = "text-davinci-002"
-	TextDavinci003Engine EngineType = "text-davinci-003"
-	Gpt35TurboEngine     EngineType = "gpt-3.5-turbo"
-	Gpt35Turbo0301Engine EngineType = "gpt-3.5-turbo-0301"
-	ImageEngineCreate    EngineType = "images/generations"
-	AdaEngine            EngineType = "ada"
-	BabbageEngine        EngineType = "babbage"
-	CurieEngine          EngineType = "curie"
-	DavinciEngine        EngineType = "davinci"
-	DefaultEngine        EngineType = Gpt35TurboEngine
+	Gpt35TurboEngine  EngineType = "gpt-3.5-turbo"
+	Gpt4Engine        EngineType = "gpt-4"
+	ImageEngineCreate EngineType = "images/generations"
+	DefaultEngine     EngineType = Gpt35TurboEngine
 )
 
 // DefaultRetry 默认重试次数

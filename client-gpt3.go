@@ -40,7 +40,7 @@ func (c *GPT3client) DoStream(ctx context.Context, say []ChatCompletionMessage, 
 		return errors.New("您得说些什么。")
 	}
 	if c.defaultEngine == Gpt35TurboEngine ||
-		c.defaultEngine == Gpt35Turbo0301Engine {
+		c.defaultEngine == Gpt4Engine {
 		request, err := c.makeChatCompletionRequest(ChatCompletionMessage{
 			Role:    "system",
 			Content: c.systemprompt,
@@ -63,7 +63,7 @@ func (c *GPT3client) DoOnce(ctx context.Context, say []ChatCompletionMessage) (C
 		return nil, errors.New("您得说些什么。")
 	}
 	if c.defaultEngine == Gpt35TurboEngine ||
-		c.defaultEngine == Gpt35Turbo0301Engine {
+		c.defaultEngine == Gpt4Engine {
 		request, err := c.makeChatCompletionRequest(ChatCompletionMessage{
 			Role:    "system",
 			Content: c.systemprompt,
