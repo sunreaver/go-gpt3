@@ -224,36 +224,7 @@ func (c *client) sendAndOnData(req *http.Request, output CompletionResponseInter
 		request, _ := httputil.DumpRequest(req, true)
 		return errors.Wrapf(err, "重试请求失败:url=%v,req=%v", req.URL.String(), string(request))
 	}
-
-	reader := newEventStreamReader(resp.Body, 1<<16)
-	defer resp.Body.Close()
-
-LOOP:
-	for {
-		event, err := reader.ReadEvent()
-		if err != nil {
-			if err == io.EOF {
-				break LOOP
-			}
-			return errors.Wrap(err, "ReadEvent")
-		}
-
-		// If we get an error, ignore it.
-		var msg *Event
-		if msg, err = processEvent(event); err != nil {
-			return errors.Wrap(err, "ProcessEvent")
-		}
-		output.Reset()
-		if bytes.Equal(msg.Data, doneSequence) {
-			break LOOP
-		}
-		if err := json.Unmarshal(msg.Data, output); err != nil {
-			return errors.Errorf("invalid json stream data: %v", err)
-		}
-
-		onData(output)
-	}
-	return nil
+	return StreamOnData(resp.Body, output, onData)
 }
 
 func (c *client) Edits(ctx context.Context, request EditsRequest) (*EditsResponse, error) {
