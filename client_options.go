@@ -78,6 +78,14 @@ func WithMaxtokens(maxtokens int) ClientOption {
 	}
 }
 
+// maxsend
+func WithMaxsend(maxsend int) ClientOption {
+	return func(c *client) error {
+		c.gpt3.maxsend = maxsend
+		return nil
+	}
+}
+
 // 注入系统提示
 func WithSystemPrompt(prompt string) ClientOption {
 	return func(c *client) error {

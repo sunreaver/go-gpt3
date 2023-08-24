@@ -12,6 +12,7 @@ type GPT3client struct {
 
 	stop          []string
 	maxtokens     int
+	maxsend       int
 	systemprompt  string
 	query         string
 	apikey        string
@@ -25,6 +26,7 @@ func MakeGPT3Client(options ...ClientOption) *GPT3client {
 		defaultEngine: DefaultEngine,
 		maxretry:      DefaultRetry,
 		maxtokens:     256,
+		maxsend:       4096, // 默认4k
 		stop:          nil,
 	}
 
@@ -83,7 +85,7 @@ func (c *GPT3client) DoOnce(ctx context.Context, say []ChatCompletionMessage) (C
 
 func (c *GPT3client) makeChatCompletionRequest(system ChatCompletionMessage, say ...ChatCompletionMessage) (ChatCompletionRequest, error) {
 	// 组装 内容
-	maxlen := 3896 - len(system.Content) // 不用 4096 是防止刚好贴边容易出问题；预留200空闲
+	maxlen := c.maxsend - len(system.Content)
 	tmpCount := 0
 CLIP:
 	for i := len(say) - 1; i >= 0; i-- {
@@ -126,8 +128,7 @@ func (c *GPT3client) makeCompletionRequest(say []ChatCompletionMessage) Completi
 	}
 	syslen := len(system)
 	tstr := text.String()
-	// max 4096 限制
-	if maxlen, l := 3896-syslen, len(tstr); l > maxlen {
+	if maxlen, l := c.maxsend-syslen, len(tstr); l > maxlen {
 		tstr = string([]rune(tstr[l-maxlen:])[2:])
 	}
 	return CompletionRequest{
